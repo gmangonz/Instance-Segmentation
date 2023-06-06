@@ -4,6 +4,7 @@ import tensorflow as tf
 import os
 from PIL import Image
 from tqdm import tqdm
+import numpy as np
 
 
 ###### Save to TFRecord ######
@@ -112,6 +113,29 @@ def _parse_features(example_proto, image_shape, features):
 
 
 ###### Display images ######
+
+def visualize_outputs(figsize, data):
+
+    imgs, masks = data[0], data[1]
+    num_images = len(imgs)
+    titles = ['Image {}'.format(i+1) for i in range(num_images)]
+    
+    rows = np.floor(np.sqrt(num_images))
+    cols = np.ceil(num_images / rows)
+
+    fig, axes = plt.subplots(int(rows), int(cols), figsize=figsize)
+    for i, ax in enumerate(axes.flat):
+        if i < num_images:
+            image = imgs[i]
+            ax.imshow(np.array(image))
+
+            ax.axis('off')
+            ax.set_title(titles[i])
+        else:
+            ax.axis('off')
+    plt.tight_layout()
+    plt.show()
+
 
 def display_imgs(*input_imgs):
 

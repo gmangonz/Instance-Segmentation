@@ -50,17 +50,21 @@ class RandomHorizontalFlip(layers.Layer):
     self.flip_mask = layers.RandomFlip(mode='vertical', seed=seed, **kwargs)
     self.probability = probability
 
+  def get_batch_wise(self, imgs, masks, rand):
+        
+      batch_size = tf.shape(imgs)[0]
+      augmentation_values = tf.random.uniform(shape=(batch_size, 1, 1, 1), minval=0.0, maxval=1.0)
+      augmentation_bools = tf.math.less(augmentation_values, rand)
+      flipped_imgs, flipped_masks = self.flip_img(imgs), self.flip_mask(masks)
+      imgs = tf.where(augmentation_bools, flipped_imgs, imgs)
+      masks = tf.where(augmentation_bools, flipped_masks, masks)
+      return imgs, masks
+
   def call(self, inputs): # img: (h, w, c)
 
-    img, mask = inputs
-
-    # img_flipped = self.flip_img(img)
-    # mask_flipped = self.flip_mask(mask)
-
-    # img_flipped = tf.cast(img_flipped, img.dtype)
-    # mask_flipped = tf.cast(mask_flipped, mask.dtype)
-
-    return tf.cond(tf.less(tf.random.uniform([]), self.probability), lambda: (self.flip_img(img), self.flip_mask(mask)), lambda: inputs)
+    imgs, masks, rand = inputs[0], inputs[1], inputs[2]
+    return self.get_batch_wise(imgs, masks, rand)
+    return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks))
   
 class RandomMirror(layers.Layer):
 
@@ -71,16 +75,21 @@ class RandomMirror(layers.Layer):
       super(RandomMirror, self).__init__(**kwargs)
       self.probability = probability
     
+    def get_batch_wise(self, imgs, masks, rand):
+        
+      batch_size = tf.shape(imgs)[0]
+      augmentation_values = tf.random.uniform(shape=(batch_size, 1, 1, 1), minval=0.0, maxval=1.0)
+      augmentation_bools = tf.math.less(augmentation_values, rand)
+      mirrored_imgs, mirrored_masks = imgs[:, :, ::-1], masks[:, :, ::-1]
+      imgs = tf.where(augmentation_bools, mirrored_imgs, imgs)
+      masks = tf.where(augmentation_bools, mirrored_masks, masks)
+      return imgs, masks
+
     def call(self, inputs):
 
-      img, mask = inputs
-    #   img_mirror = img[:, :, ::-1]
-    #   mask_mirror = mask[:, :, ::-1]
-
-    #   img_mirror = tf.cast(img_mirror, img.dtype)
-    #   mask_mirror = tf.cast(mask_mirror, mask.dtype)
-
-      return tf.cond(tf.less(tf.random.uniform([]), self.probability), lambda: (img[:, :, ::-1], mask[:, :, ::-1]), lambda: inputs) # img_mirror, mask_mirror
+      imgs, masks, rand = inputs[0], inputs[1], inputs[2]
+      return self.get_batch_wise(imgs, masks, rand)
+      return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks))
 
 
 class RandomZoom(layers.Layer):
@@ -98,17 +107,21 @@ class RandomZoom(layers.Layer):
         self.zoom_mask = layers.RandomZoom(height_factor=height_factor, width_factor=width_factor, fill_mode='nearest', interpolation='nearest', seed=seed, fill_value=0.0)
         self.probability = probability
 
+    def get_batch_wise(self, imgs, masks, rand):
+        
+      batch_size = tf.shape(imgs)[0]
+      augmentation_values = tf.random.uniform(shape=(batch_size, 1, 1, 1), minval=0.0, maxval=1.0)
+      augmentation_bools = tf.math.less(augmentation_values, rand)
+      zoomed_imgs, zoomed_masks = self.zoom_img(imgs), self.zoom_mask(masks)
+      imgs = tf.where(augmentation_bools, zoomed_imgs, imgs)
+      masks = tf.where(augmentation_bools, zoomed_masks, masks)
+      return imgs, masks
+
     def call(self, inputs):
 
-        img, mask = inputs
-
-        # img_zoom = self.zoom_img(img)
-        # mask_zoom = self.zoom_mask(mask)
-
-        # img_zoom = tf.cast(img_zoom, img.dtype)
-        # mask_zoom = tf.cast(mask_zoom, mask.dtype)
-
-        return tf.cond(tf.less(tf.random.uniform([]), self.probability), lambda: (self.zoom_img(img), self.zoom_mask(mask)), lambda: inputs) # img_zoom, mask_zoom
+        imgs, masks, rand = inputs[0], inputs[1], inputs[2]
+        return self.get_batch_wise(imgs, masks, rand)
+        return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks))
     
 
 class RandomRotate(layers.Layer):
@@ -125,17 +138,21 @@ class RandomRotate(layers.Layer):
     self.rotate_mask = layers.RandomRotation(factor=rot, fill_mode='nearest', interpolation='nearest', fill_value=0.0, seed=seed)
     self.probability = probability
 
+  def get_batch_wise(self, imgs, masks, rand):
+       
+    batch_size = tf.shape(imgs)[0]
+    augmentation_values = tf.random.uniform(shape=(batch_size, 1, 1, 1), minval=0.0, maxval=1.0)
+    augmentation_bools = tf.math.less(augmentation_values, rand)
+    rotated_imgs, rotated_masks = self.rotate_img(imgs), self.rotate_mask(masks)
+    imgs = tf.where(augmentation_bools, rotated_imgs, imgs)
+    masks = tf.where(augmentation_bools, rotated_masks, masks)
+    return imgs, masks
+
   def call(self, inputs):
 
-    img, mask = inputs
-    
-    # img_rotate = self.rotate_img(img)
-    # mask_rotate = self.rotate_mask(mask)
-
-    # img_rotate = tf.cast(img_rotate, img.dtype)
-    # mask_rotate = tf.cast(mask_rotate, mask.dtype)
-
-    return tf.cond(tf.less(tf.random.uniform([]), self.probability), lambda: (self.rotate_img(img), self.rotate_mask(mask)), lambda: inputs) # img_rotate, mask_rotate
+    imgs, masks, rand = inputs[0], inputs[1], inputs[2]
+    return self.get_batch_wise(imgs, masks, rand)
+    return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks))
 
 class RandomShift(layers.Layer):
 
@@ -151,16 +168,21 @@ class RandomShift(layers.Layer):
     self.translate_mask = layers.RandomTranslation(translate, translate, fill_mode='nearest', interpolation='nearest', fill_value=0.0, seed=seed)
     self.probability = probability
 
+  def get_batch_wise(self, imgs, masks, rand):
+       
+    batch_size = tf.shape(imgs)[0]
+    augmentation_values = tf.random.uniform(shape=(batch_size, 1, 1, 1), minval=0.0, maxval=1.0)
+    augmentation_bools = tf.math.less(augmentation_values, rand)
+    shifted_imgs, shifted_masks = self.translate_img(imgs), self.translate_mask(masks)
+    imgs = tf.where(augmentation_bools, shifted_imgs, imgs)
+    masks = tf.where(augmentation_bools, shifted_masks, masks)
+    return imgs, masks
+
   def call(self, inputs): # img: (h, w, c)
 
-    img, mask = inputs
-    # img_translate = self.translate_img(img)
-    # mask_translate = self.translate_mask(mask)
-
-    # img_translate = tf.cast(img_translate, img.dtype)
-    # mask_translate = tf.cast(mask_translate, mask.dtype)
-
-    return tf.cond(tf.less(tf.random.uniform([]), self.probability), lambda: (self.translate_img(img), self.translate_mask(mask)), lambda: inputs) # img_translate, mask_translate
+    imgs, masks, rand = inputs[0], inputs[1], inputs[2]
+    return self.get_batch_wise(imgs, masks, rand)
+    return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks))
   
 
 class RandomBox(layers.Layer):
@@ -227,9 +249,20 @@ class OverlayBox(layers.Layer):
         self.probability = probability
         self.random_box = RandomBox(min_height, min_width, height, width)
 
+    def get_batch_wise(self, imgs, masks, rand):
+       
+        batch_size = tf.shape(imgs)[0]
+        augmentation_values = tf.random.uniform(shape=(batch_size, 1, 1, 1), minval=0.0, maxval=1.0)
+        augmentation_bools = tf.math.less(augmentation_values, rand)
+        boxed_imgs, masks = self.random_box((imgs, masks))
+        imgs = tf.where(augmentation_bools, boxed_imgs, imgs)
+        return imgs, masks
+
     def call(self, inputs): # (bs, h, w, c), (bs, h, w, c)
         
-        return tf.cond(tf.less(tf.random.uniform([]), self.probability), lambda: self.random_box(inputs), lambda: inputs)
+        imgs, masks, rand = inputs[0], inputs[1], inputs[2]
+        return self.get_batch_wise(imgs, masks, rand)
+        return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks))
     
 
 class AddNoise(layers.Layer):
@@ -241,15 +274,26 @@ class AddNoise(layers.Layer):
         super(AddNoise, self).__init__(**kwargs)
         self.probability = probability
 
+    def get_noisy_img(self, imgs):
+       
+        noise = tf.random.normal(tf.shape(imgs), mean=0, stddev=0.075, dtype=imgs.dtype)
+        img_noisy = tf.clip_by_value(imgs + noise, 0.0, 1.0)
+        img_noisy = tf.cast(img_noisy, imgs.dtype)
+        return img_noisy
+
+    def get_batch_wise(self, imgs, masks, rand):
+       
+        batch_size = tf.shape(imgs)[0]
+        augmentation_values = tf.random.uniform(shape=(batch_size, 1, 1, 1), minval=0.0, maxval=1.0)
+        augmentation_bools = tf.math.less(augmentation_values, rand)
+        imgs = tf.where(augmentation_bools, self.get_noisy_img(imgs), imgs)
+        return imgs, masks
+
     def call(self, inputs):
 
-        img, mask = inputs
-
-        noise = tf.random.normal(tf.shape(img), mean=0, stddev=0.075, dtype=img.dtype)
-        img_noise = tf.clip_by_value(img + noise, 0.0, 1.0)
-        img_noise = tf.cast(img_noise, img.dtype)
-
-        return tf.cond(tf.less(tf.random.uniform([]), self.probability), lambda: (img_noise, mask), lambda: inputs)
+        imgs, masks, rand = inputs[0], inputs[1], inputs[2]
+        return self.get_batch_wise(imgs, masks, rand)
+        return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks))
 
 
 class GaussianBlur(layers.Layer):
@@ -286,27 +330,46 @@ class GaussianBlur(layers.Layer):
 
         blur_image = tf.concat([r_blur, g_blur, b_blur], axis=-1)
         blur_image = tf.cast(blur_image, img.dtype)
-        # blur_image = tfa.image.gaussian_filter2d(img, filter_shape=self.kernel_size, sigma=self.sigma, padding='CONSTANT')
 
         return blur_image
 
+    def get_batch_wise(self, imgs, masks, rand):
+       
+        batch_size = tf.shape(imgs)[0]
+        augmentation_values = tf.random.uniform(shape=(batch_size, 1, 1, 1), minval=0.0, maxval=1.0)
+        augmentation_bools = tf.math.less(augmentation_values, rand)
+        imgs = tf.where(augmentation_bools, self.blur_image(imgs), imgs)
+        return imgs, masks
+
     def call(self, inputs):
 
-        img, mask = inputs
-        return tf.cond(tf.less(tf.random.uniform([]), self.probability), lambda: (self.blur_image(img), mask), lambda: inputs) # blur_image, mask
+        imgs, masks, rand = inputs[0], inputs[1], inputs[2]
+        return self.get_batch_wise(imgs, masks, rand)
+        return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks)) # blur_image, mask
     
 
-# def step(values): # "hard sigmoid", useful for binary accuracy calculation from logits. negative values -> 0.0, positive values -> 1.0  
-#     return 0.5 * (1.0 + tf.sign(values))
+class GenerateRandom(layers.Layer):
+   
+    def __init__(self, **kwargs):
+      
+      super(GenerateRandom, self).__init__(**kwargs)
+      self.probability = tf.Variable(0.0, dtype=tf.float32, trainable=False)
+      
+    def call(self, inputs): # (1, 1) e.g. [[x]]
+       
+       self.probability.assign(inputs[0][0])
 
-class Ada(tf.keras.Model): # layers.Layer
+       return self.probability
+
+
+class Ada(tf.keras.Model):
 
     def __init__(self, 
+                 img_size=(128, 128),
                  translate=0.2, 
                  rot=0.5, 
                  scale=0.25, 
                  p=0.5,
-                 img_size=(128, 128),
                  batch_p=0.0,
                  kernel_size=3,
                  sigma=1,
@@ -318,10 +381,11 @@ class Ada(tf.keras.Model): # layers.Layer
         
         super(Ada, self).__init__(**kwargs)
         
-        self.probability = tf.Variable(batch_p, trainable=False) # True
+        self.probability = tf.Variable(batch_p, trainable=False)
         self.target_accuracy = 0.85 # 0.85, 0.95
         self.integration_steps = 500 # 1000, 1500, 2000
-    
+
+        self.augmenter = build_augmenter(aug_functions, img_size)
         self.augmenter = custom_data_augmentation_func(translate=translate, rot=rot, scale=scale, p=p, img_size=img_size, kernel_size=kernel_size, 
                                                        sigma=sigma, min_height=min_height, min_width=min_width, max_height=max_height, max_width=max_width)
     
@@ -347,78 +411,83 @@ class Ada(tf.keras.Model): # layers.Layer
         self.probability.assign( tf.clip_by_value(self.probability + accuracy_error / self.integration_steps, 0.0, 1.0) )
 
 
-
-def custom_data_augmentation_func(translate = 0.2,
-                                  rot = 0.5,
-                                  scale = 0.25,
-                                  p = 0.5,
-                                  img_size = (128, 128),
-                                  kernel_size = 3,
-                                  sigma = 1,
-                                  min_height = 50,
-                                  min_width = 50,
-                                  max_height = 80,
-                                  max_width = 80):
+def build_augmenter(aug_functions, img_size):
 
     if len(img_size) == 2:
         img_shape = img_size + (3,)
         mask_shape = img_size + (1,)
-    
+
     if len(img_size) == 3:
         img_shape = img_size
         mask_shape = (img_size[0], img_size[1], 1)
 
     input_img = layers.Input(shape=img_shape) # (H, W, C)
-    input_mask = layers.Input(shape=mask_shape) # (H, W, C)
-    x = (input_img, input_mask)
-    x = RandomHorizontalFlip(probability=p)(x)
-    x = RandomShift(translate=translate, probability=p)(x)
-    x = RandomRotate(probability=p, rot=rot)(x)
-    x = RandomZoom(probability=p, height_factor=scale, width_factor=scale)(x)
-    x = RandomMirror(probability=p)(x)
-    x = AddNoise(probability=p)(x)
-    x = GaussianBlur(kernel_size=kernel_size, sigma=sigma, probability=p)(x)
-    x = OverlayBox(probability=p, min_height=min_height, min_width=min_width, height=max_height, width=max_width)(x)
-    augmenter = tf.keras.Model([input_img, input_mask], x, name='custom_data_augmentation_function')
+    input_mask = layers.Input(shape=mask_shape)
+    input_rand = layers.Input(shape=(1, ), batch_size=1)
 
-    return augmenter
+    p = GenerateRandom()(input_rand)
+    x = (input_img, input_mask, p)
+    for i, func in enumerate(aug_functions):
+        out_img, out_mask = func(x)
 
+        if i <= len(aug_functions) - 1:
+          x = (out_img, out_mask, p)
 
+    augment_model = tf.keras.Model([input_img, input_mask, input_rand], [out_img, out_mask], name='obj_det_data_augmentation_function')
+    return augment_model
 
 
 
 
 
-# def test_augmentation(input_test, idx=83):
+# def custom_data_augmentation_func(translate = 0.2,
+#                                   rot = 0.5,
+#                                   scale = 0.25,
+#                                   p = 0.5,
+#                                   img_size = (128, 128),
+#                                   kernel_size = 3,
+#                                   sigma = 1,
+#                                   min_height = 50,
+#                                   min_width = 50,
+#                                   max_height = 80,
+#                                   max_width = 80):
+
+#     if len(img_size) == 2:
+#         img_shape = img_size + (3,)
+#         mask_shape = img_size + (1,)
+    
+#     if len(img_size) == 3:
+#         img_shape = img_size
+#         mask_shape = (img_size[0], img_size[1], 1)
+
+#     input_img = layers.Input(shape=img_shape) # (H, W, C)
+#     input_mask = layers.Input(shape=mask_shape) # (H, W, C)
+#     x = (input_img, input_mask)
+#     x = RandomHorizontalFlip(probability=p)(x)
+#     x = RandomShift(translate=translate, probability=p)(x)
+#     x = RandomRotate(probability=p, rot=rot)(x)
+#     x = RandomZoom(probability=p, height_factor=scale, width_factor=scale)(x)
+#     x = RandomMirror(probability=p)(x)
+#     x = AddNoise(probability=p)(x)
+#     x = GaussianBlur(kernel_size=kernel_size, sigma=sigma, probability=p)(x)
+#     x = OverlayBox(probability=p, min_height=min_height, min_width=min_width, height=max_height, width=max_width)(x)
+#     augmenter = tf.keras.Model([input_img, input_mask], x, name='custom_data_augmentation_function')
+
+#     return augmenter
 
 
-#     augmenter = custom_data_augmentation_func(translate = 0.2, rot = 0.5, scale = 0.2, p=0.5)
-#     a, b = augmenter(input_test)
-#     plt.imshow(a[idx])
-#     plt.show()
-#     plt.imshow(b[idx])
-#     plt.show()
+# class GenerateRandom(layers.Layer):
+   
+#     def __init__(self, **kwargs):
+      
+#       super(GenerateRandom, self).__init__(**kwargs)
+      
+#     def call(self, inputs): # (1, 1) e.g. [[8]]
+       
+#        inputs = tf.cast(inputs, tf.int32)
+#        rand = tf.random.uniform(shape=(inputs[0]), minval=0., maxval=1., dtype=tf.float32)
+#        return rand
 
-#     return a, b
 
-
-        # if len(img_size) == 2:
-        #    img_shape = img_size + (3,)
-        #    mask_shape = img_size + (1,)
-        
-        # if len(img_size) == 3:
-        #     img_shape = img_size
-        #     mask_shape = (img_size[0], img_size[1], 1)
-            
-        # input_img = layers.Input(shape=img_shape) # dtype=tf.float32 (H, W, C)
-        # input_mask = layers.Input(shape=mask_shape) # (H, W, C)
-        # x = (input_img, input_mask)
-        # x = RandomHorizontalFlip(probability=p)(x)
-        # x = RandomShift(translate=translate, probability=p)(x)
-        # x = RandomRotate(probability=p, rot=rot)(x)
-        # x = RandomZoom(probability=p, height_factor=scale, width_factor=scale)(x)
-        # x = RandomMirror(probability=p)(x)
-        # x = AddNoise(probability=p)(x)
-        # x = GaussianBlur(kernel_size=kernel_size, sigma=sigma, probability=p)(x)
-        # x = OverlayBox(probability=p, min_height=min_height, min_width=min_width, height=max_height, width=max_width)(x)
-        # self.augmenter = tf.keras.Model([input_img, input_mask], x)
+# def step(values): # "hard sigmoid", useful for binary accuracy calculation from logits. negative values -> 0.0, positive values -> 1.0  
+#     return 0.5 * (1.0 + tf.sign(values))
