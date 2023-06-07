@@ -347,7 +347,7 @@ class AugProbability(layers.Layer):
     def __init__(self, **kwargs):
       
       super(AugProbability, self).__init__(**kwargs)
-      self.probability = tf.Variable(0.0, dtype=tf.float32, trainable=False)
+      self.probability = tf.Variable(0.0, dtype=tf.float32, trainable=False, name="p")
       
     def call(self, inputs): # (1, 1) e.g. [[x]]
        
@@ -367,7 +367,7 @@ class Ada(tf.keras.Model):
         
         super(Ada, self).__init__(**kwargs)
         
-        self.probability = tf.Variable([[initial_probability]])
+        self.probability = tf.Variable([[initial_probability]], name='ada_p')
         self.switch = switch
         self.augmenter = build_augmenter(aug_functions, img_size)
     

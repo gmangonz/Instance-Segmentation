@@ -28,7 +28,7 @@ class MyModel(tf.keras.Model):
         super(MyModel, self).__init__(**kwargs)
 
         self.img_size = img_size
-        self.train_step_counter = tf.Variable(0, dtype=tf.int32, trainable=False)
+        self.train_step_counter = tf.Variable(0, dtype=tf.int32, trainable=False, name='train_step_counter')
         self.model = make_dummy_model(img_size)
         self.ada = augment_func
  
