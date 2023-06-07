@@ -76,7 +76,7 @@ class SaveModel(tf.keras.callbacks.ModelCheckpoint):
         super(SaveModel, self).on_batch_end(epoch, logs)
 
 
-def create_callbacks(filepath_name, args, model_to_save):
+def create_callbacks(filepath_name, args, model_to_save, img_path):
     
     early_stop = EarlyStopping(
         monitor              = args.monitor, 
@@ -108,7 +108,7 @@ def create_callbacks(filepath_name, args, model_to_save):
     )
 
     display = DisplayCallback(
-        img_path = r'D:\DL-CV-ML Projects\Carvana Challenge - Instance Segmentation\29bb3ece3180_11.jpg', 
+        img_path = img_path, 
         args     = args
         )
     return [early_stop, checkpoint, reduce_on_plateau, display]
