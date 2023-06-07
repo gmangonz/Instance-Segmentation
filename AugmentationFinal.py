@@ -39,8 +39,7 @@ class RandomGamma(layers.Layer):
 
 class RandomHorizontalFlip(layers.Layer):
 
-  def __init__(self, 
-                probability,
+  def __init__(self,
                 seed=42,
                 **kwargs):
 
@@ -48,8 +47,7 @@ class RandomHorizontalFlip(layers.Layer):
     
     self.flip_img = layers.RandomFlip(mode='vertical', seed=seed, **kwargs)
     self.flip_mask = layers.RandomFlip(mode='vertical', seed=seed, **kwargs)
-    self.probability = probability
-
+    
   def get_batch_wise(self, imgs, masks, rand):
         
       batch_size = tf.shape(imgs)[0]
@@ -68,12 +66,10 @@ class RandomHorizontalFlip(layers.Layer):
   
 class RandomMirror(layers.Layer):
 
-    def __init__(self, 
-                 probability,
+    def __init__(self,
                  **kwargs):
       
       super(RandomMirror, self).__init__(**kwargs)
-      self.probability = probability
     
     def get_batch_wise(self, imgs, masks, rand):
         
@@ -93,8 +89,7 @@ class RandomMirror(layers.Layer):
 
 class RandomZoom(layers.Layer):
 
-    def __init__(self, 
-                 probability,
+    def __init__(self,
                  height_factor = 0.2, 
                  width_factor = 0.2, 
                  seed = 42,
@@ -104,7 +99,6 @@ class RandomZoom(layers.Layer):
 
         self.zoom_img = layers.RandomZoom(height_factor=height_factor, width_factor=width_factor, fill_mode='nearest', interpolation='nearest', seed=seed, fill_value=0.0)
         self.zoom_mask = layers.RandomZoom(height_factor=height_factor, width_factor=width_factor, fill_mode='nearest', interpolation='nearest', seed=seed, fill_value=0.0)
-        self.probability = probability
 
     def get_batch_wise(self, imgs, masks, rand):
         
@@ -124,8 +118,7 @@ class RandomZoom(layers.Layer):
 
 class RandomRotate(layers.Layer):
 
-  def __init__(self, 
-               probability,
+  def __init__(self,
                rot=0.3,
                seed=42,
                **kwargs):
@@ -134,7 +127,6 @@ class RandomRotate(layers.Layer):
     
     self.rotate_img = layers.RandomRotation(factor=rot, fill_mode='nearest', interpolation='nearest', fill_value=0.0, seed=seed)
     self.rotate_mask = layers.RandomRotation(factor=rot, fill_mode='nearest', interpolation='nearest', fill_value=0.0, seed=seed)
-    self.probability = probability
 
   def get_batch_wise(self, imgs, masks, rand):
        
@@ -154,8 +146,7 @@ class RandomRotate(layers.Layer):
 
 class RandomShift(layers.Layer):
 
-  def __init__(self, 
-               probability,
+  def __init__(self,
                translate=0.2, 
                seed=42,
                **kwargs):
@@ -164,7 +155,6 @@ class RandomShift(layers.Layer):
 
     self.translate_img = layers.RandomTranslation(translate, translate, fill_mode='nearest', interpolation='nearest', fill_value=0.0, seed=seed)
     self.translate_mask = layers.RandomTranslation(translate, translate, fill_mode='nearest', interpolation='nearest', fill_value=0.0, seed=seed)
-    self.probability = probability
 
   def get_batch_wise(self, imgs, masks, rand):
        
@@ -234,7 +224,6 @@ class RandomBox(layers.Layer):
 class OverlayBox(layers.Layer):
 
     def __init__(self, 
-                 probability, 
                  min_height, 
                  min_width, 
                  height, 
@@ -242,8 +231,6 @@ class OverlayBox(layers.Layer):
                  **kwargs):
 
         super(OverlayBox, self).__init__(**kwargs)
-        
-        self.probability = probability
         self.random_box = RandomBox(min_height, min_width, height, width)
 
     def get_batch_wise(self, imgs, masks, rand):
@@ -264,11 +251,9 @@ class OverlayBox(layers.Layer):
 class AddNoise(layers.Layer):
 
     def __init__(self, 
-                 probability, 
                  **kwargs):
 
         super(AddNoise, self).__init__(**kwargs)
-        self.probability = probability
 
     def get_noisy_img(self, imgs):
        
@@ -296,13 +281,11 @@ class GaussianBlur(layers.Layer):
     def __init__(self, 
                  kernel_size, 
                  sigma, 
-                 probability=0.75, 
                  **kwargs):
         super(GaussianBlur, self).__init__(**kwargs)
 
         self.kernel_size = kernel_size
         self.sigma = sigma
-        self.probability = probability
 
     def gaussian_kernel(self, size=3, sigma=1):
 
