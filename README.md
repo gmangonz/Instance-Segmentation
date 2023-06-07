@@ -7,4 +7,5 @@ My goal with this project is to improve my skills and knowledge of tensorflow.
 
 TODO:
 
-- [ ] Fix everything
+- [ ] Actually build the model
+- [ ] Make CallbackList for eager mode
