@@ -22,7 +22,8 @@ class MyModel(tf.keras.Model):
 
     def __init__(self, 
                  img_size,
-                 augment_func, # ada_p=0.5, ada_batch_p=0.0,
+                 augment_func,
+                 args,
                  **kwargs):
                
         super(MyModel, self).__init__(**kwargs)
@@ -31,13 +32,14 @@ class MyModel(tf.keras.Model):
         self.train_step_counter = tf.Variable(0, dtype=tf.int32, trainable=False, name='train_step_counter')
         self.model = make_dummy_model(img_size)
         self.ada = augment_func
+        self.monitor = args.monitor
  
     def compile(self, optimizer=None, metrics=[], *args, **kwargs):
 
         assert isinstance(metrics, list), "metrics input must be a list"
         self.train_step_counter.assign(0)
         self.optimizer = optimizer
-        self.loss_tracker = metrics[0] if len(metrics) == 1 else tf.keras.metrics.Mean(name="loss_metric") ###### Make it so metrics can be multiple items ######
+        self.loss_tracker = metrics[0] if len(metrics) == 1 else tf.keras.metrics.Mean(name=self.monitor) ###### Make it so metrics can be multiple items ######
         self.dice_coeff_tracker = tf.keras.metrics.Mean(name="dice_coeff_metric")     
         self.augmentation_probability_tracker = tf.keras.metrics.Mean(name="aug_probability")
 

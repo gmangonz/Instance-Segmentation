@@ -22,7 +22,7 @@ class DisplayCallback(tf.keras.callbacks.Callback):
             if self.training_method == 'train_step': 
                 test_pred_mask = self.model.model(self.test_img_for_epoch_viz[None, ...], training=False)
             
-            if self.training_method == 'fit':
+            if self.training_method in ['fit', 'eagerly']:
                 test_pred_mask = self.model(self.test_img_for_epoch_viz[None, ...], training=False)
             
             plt.figure(figsize=(8, 8))
@@ -79,7 +79,7 @@ class SaveModel(tf.keras.callbacks.ModelCheckpoint):
 def create_callbacks(filepath_name, args, model_to_save):
     
     early_stop = EarlyStopping(
-        monitor              = 'loss_metric', 
+        monitor              = args.monitor, 
         min_delta            = 0.01, 
         patience             = 5, 
         mode                 = 'min', 
@@ -88,7 +88,7 @@ def create_callbacks(filepath_name, args, model_to_save):
     checkpoint = SaveModel(
         model_to_save      = model_to_save,
         filepath           = filepath_name,
-        monitor            = 'loss_metric', 
+        monitor            = args.monitor, 
         verbose            = 1, 
         save_best_only     = True, 
         save_weights_only  = True,
@@ -97,7 +97,7 @@ def create_callbacks(filepath_name, args, model_to_save):
     )
 
     reduce_on_plateau = ReduceLROnPlateau(
-        monitor   = 'loss_metric',
+        monitor   = args.monitor,
         factor    = 0.1,
         patience  = 5,
         verbose   = 1,
