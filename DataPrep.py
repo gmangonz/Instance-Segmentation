@@ -7,9 +7,6 @@ import argparse
 import tensorflow as tf
 from utils import _parse_features, read_tfrecord
 
-# IMAGE_SIZE = 128
-BATCH_SIZE = 86 #############################################################################################
-
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--base_path', '-bp', help="path to use as base", default=base_path)
 # parser.add_argument('--orig_width', '-w', help='original width', type=int, default=1918)
@@ -71,7 +68,7 @@ def get_train_val(df_train, aug=True):
     return train, val
 
 
-def load_data(image_path, mask_path, img_size=(128, 128)):
+def load_data(image_path, mask_path, img_size):
 
     image = tf.io.read_file(image_path)
     image = tf.image.decode_png(image, channels=3)
@@ -94,11 +91,10 @@ def data_generator(image_list, mask_list, split='train', img_size = (128, 128), 
 
     dataset = tf.data.Dataset.from_tensor_slices((image_list, mask_list))
     dataset = dataset.shuffle(8*batch_size) if split == 'train' else dataset 
-    dataset = dataset.map(load_data, num_parallel_calls=tf.data.AUTOTUNE) # [2, H, W, C]
-    # dataset = dataset.map(lambda x, y: load_data(x, y, img_size), num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.map(lambda x, y: load_data(x, y, img_size), num_parallel_calls=tf.data.AUTOTUNE) # [2, H, W, C] dataset = dataset.map(load_data, num_parallel_calls=tf.data.AUTOTUNE) # [2, H, W, C]
     dataset = dataset.batch(batch_size, drop_remainder=True) # [None, 2, H, W, C]
     if (ds_augment_func != None) and (split == 'train'):
-        dataset = dataset.map(lambda x, y: ds_augment_func((x, y)), num_parallel_calls=tf.data.AUTOTUNE)
+        dataset = dataset.map(lambda x, y: ds_augment_func((x, y, tf.constant([0.5]))), num_parallel_calls=tf.data.AUTOTUNE)
     dataset = dataset.prefetch(tf.data.AUTOTUNE)
     return dataset
 
@@ -108,14 +104,14 @@ def data_generator_tfrecordFile(tfrecord_file, split='train', img_size=(128, 128
     assert len(img_size) == 2, "img_size must be a tuple of length 2"
     features = read_tfrecord(tfrecord_file)
 
-    ds_train = tf.data.TFRecordDataset(tfrecord_file)
-    ds_train = ds_train.map(lambda x: _parse_features(x, img_size, features), num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = tf.data.TFRecordDataset(tfrecord_file)
+    dataset = dataset.map(lambda x: _parse_features(x, img_size, features), num_parallel_calls=tf.data.AUTOTUNE)
     dataset = dataset.shuffle(8*batch_size) if split == 'train' else dataset 
-    ds_train = ds_train.batch(batch_size, drop_remainder=True)
+    dataset = dataset.batch(batch_size, drop_remainder=True)
     if (ds_augment_func != None) and (split == 'train'):
-        ds_train = ds_train.map(lambda x, y: ds_augment_func((x, y)), num_parallel_calls=tf.data.AUTOTUNE)
-    ds_train = ds_train.prefetch(tf.data.AUTOTUNE)
-    return ds_train
+        dataset = dataset.map(lambda x, y: ds_augment_func((x, y, tf.constant([0.5]))), num_parallel_calls=tf.data.AUTOTUNE)
+    dataset = dataset.prefetch(tf.data.AUTOTUNE)
+    return dataset
 
 
 # Use the prefetch transformation to overlap the work of a producer and consumer

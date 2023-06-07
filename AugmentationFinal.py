@@ -64,7 +64,7 @@ class RandomHorizontalFlip(layers.Layer):
 
     imgs, masks, rand = inputs[0], inputs[1], inputs[2]
     return self.get_batch_wise(imgs, masks, rand)
-    return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks))
+
   
 class RandomMirror(layers.Layer):
 
@@ -89,7 +89,6 @@ class RandomMirror(layers.Layer):
 
       imgs, masks, rand = inputs[0], inputs[1], inputs[2]
       return self.get_batch_wise(imgs, masks, rand)
-      return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks))
 
 
 class RandomZoom(layers.Layer):
@@ -121,7 +120,6 @@ class RandomZoom(layers.Layer):
 
         imgs, masks, rand = inputs[0], inputs[1], inputs[2]
         return self.get_batch_wise(imgs, masks, rand)
-        return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks))
     
 
 class RandomRotate(layers.Layer):
@@ -152,7 +150,7 @@ class RandomRotate(layers.Layer):
 
     imgs, masks, rand = inputs[0], inputs[1], inputs[2]
     return self.get_batch_wise(imgs, masks, rand)
-    return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks))
+
 
 class RandomShift(layers.Layer):
 
@@ -182,7 +180,6 @@ class RandomShift(layers.Layer):
 
     imgs, masks, rand = inputs[0], inputs[1], inputs[2]
     return self.get_batch_wise(imgs, masks, rand)
-    return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks))
   
 
 class RandomBox(layers.Layer):
@@ -262,7 +259,6 @@ class OverlayBox(layers.Layer):
         
         imgs, masks, rand = inputs[0], inputs[1], inputs[2]
         return self.get_batch_wise(imgs, masks, rand)
-        return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks))
     
 
 class AddNoise(layers.Layer):
@@ -293,7 +289,6 @@ class AddNoise(layers.Layer):
 
         imgs, masks, rand = inputs[0], inputs[1], inputs[2]
         return self.get_batch_wise(imgs, masks, rand)
-        return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks))
 
 
 class GaussianBlur(layers.Layer):
@@ -345,14 +340,13 @@ class GaussianBlur(layers.Layer):
 
         imgs, masks, rand = inputs[0], inputs[1], inputs[2]
         return self.get_batch_wise(imgs, masks, rand)
-        return tf.cond(tf.less(rand, self.probability), lambda: self.get_batch_wise(imgs, masks, rand), lambda: (imgs, masks)) # blur_image, mask
     
 
-class GenerateRandom(layers.Layer):
+class AugProbability(layers.Layer):
    
     def __init__(self, **kwargs):
       
-      super(GenerateRandom, self).__init__(**kwargs)
+      super(AugProbability, self).__init__(**kwargs)
       self.probability = tf.Variable(0.0, dtype=tf.float32, trainable=False)
       
     def call(self, inputs): # (1, 1) e.g. [[x]]
@@ -366,49 +360,33 @@ class Ada(tf.keras.Model):
 
     def __init__(self, 
                  img_size=(128, 128),
-                 translate=0.2, 
-                 rot=0.5, 
-                 scale=0.25, 
-                 p=0.5,
-                 batch_p=0.0,
-                 kernel_size=3,
-                 sigma=1,
-                 min_height=50, 
-                 min_width=50, 
-                 max_height=80, 
-                 max_width=80,
+                 aug_functions=[],
+                 initial_probability = 0.0,
+                 switch = True,
                  **kwargs):
         
         super(Ada, self).__init__(**kwargs)
         
-        self.probability = tf.Variable(batch_p, trainable=False)
-        self.target_accuracy = 0.85 # 0.85, 0.95
-        self.integration_steps = 500 # 1000, 1500, 2000
-
+        self.probability = tf.Variable([[initial_probability]])
+        self.switch = switch
         self.augmenter = build_augmenter(aug_functions, img_size)
-        self.augmenter = custom_data_augmentation_func(translate=translate, rot=rot, scale=scale, p=p, img_size=img_size, kernel_size=kernel_size, 
-                                                       sigma=sigma, min_height=min_height, min_width=min_width, max_height=max_height, max_width=max_width)
     
     def call(self, inputs, training=False):
 
-        # imgs, masks = inputs # [bs, H, W, C], [bs, H, W, C]
+        imgs, masks = inputs[0], inputs[1] # [bs, H, W, C], [bs, H, W, C]
 
-        if training:
+        if training and self.switch:
           
-          batch_size = tf.shape(imgs)[0]
-          augmented_imgs, augmented_masks = self.augmenter(inputs, training) # (2, bs, H, W, C)
-          augmentation_values = tf.random.uniform(shape=(batch_size, 1, 1, 1), minval=0.0, maxval=1.0) # Generate random numbers
-          augmentation_bools = tf.math.less(augmentation_values, self.probability) # Get booleans in the indices where we want augmented images or not
-          imgs = tf.where(augmentation_bools, augmented_imgs, imgs)
-          masks = tf.where(augmentation_bools, augmented_masks, masks)
+          return self.augmenter((imgs, masks, self.probability), training)
 
         return inputs
 
-    def update(self, loss):
+    def update(self, loss): # Loss can be tf.constant of any shape
 
-        # The more accurate the model, the more augmentations is performed.
-        accuracy_error = (1. - loss) - self.target_accuracy
-        self.probability.assign( tf.clip_by_value(self.probability + accuracy_error / self.integration_steps, 0.0, 1.0) )
+        # The more accurate the model, the probability of augmentations is higher.
+        accuracy = K.mean(1. - loss)
+        factor = (tf.math.exp(3. * accuracy) - 1) / (3. * tf.math.exp(accuracy) + 9.) # Arbitray function to map accuracy to 0-1 range.
+        self.probability.assign( [[tf.clip_by_value(factor, 0.0, 1.0)]] )
 
 
 def build_augmenter(aug_functions, img_size):
@@ -425,7 +403,7 @@ def build_augmenter(aug_functions, img_size):
     input_mask = layers.Input(shape=mask_shape)
     input_rand = layers.Input(shape=(1, ), batch_size=1)
 
-    p = GenerateRandom()(input_rand)
+    p = AugProbability()(input_rand)
     x = (input_img, input_mask, p)
     for i, func in enumerate(aug_functions):
         out_img, out_mask = func(x)
@@ -435,59 +413,3 @@ def build_augmenter(aug_functions, img_size):
 
     augment_model = tf.keras.Model([input_img, input_mask, input_rand], [out_img, out_mask], name='obj_det_data_augmentation_function')
     return augment_model
-
-
-
-
-
-# def custom_data_augmentation_func(translate = 0.2,
-#                                   rot = 0.5,
-#                                   scale = 0.25,
-#                                   p = 0.5,
-#                                   img_size = (128, 128),
-#                                   kernel_size = 3,
-#                                   sigma = 1,
-#                                   min_height = 50,
-#                                   min_width = 50,
-#                                   max_height = 80,
-#                                   max_width = 80):
-
-#     if len(img_size) == 2:
-#         img_shape = img_size + (3,)
-#         mask_shape = img_size + (1,)
-    
-#     if len(img_size) == 3:
-#         img_shape = img_size
-#         mask_shape = (img_size[0], img_size[1], 1)
-
-#     input_img = layers.Input(shape=img_shape) # (H, W, C)
-#     input_mask = layers.Input(shape=mask_shape) # (H, W, C)
-#     x = (input_img, input_mask)
-#     x = RandomHorizontalFlip(probability=p)(x)
-#     x = RandomShift(translate=translate, probability=p)(x)
-#     x = RandomRotate(probability=p, rot=rot)(x)
-#     x = RandomZoom(probability=p, height_factor=scale, width_factor=scale)(x)
-#     x = RandomMirror(probability=p)(x)
-#     x = AddNoise(probability=p)(x)
-#     x = GaussianBlur(kernel_size=kernel_size, sigma=sigma, probability=p)(x)
-#     x = OverlayBox(probability=p, min_height=min_height, min_width=min_width, height=max_height, width=max_width)(x)
-#     augmenter = tf.keras.Model([input_img, input_mask], x, name='custom_data_augmentation_function')
-
-#     return augmenter
-
-
-# class GenerateRandom(layers.Layer):
-   
-#     def __init__(self, **kwargs):
-      
-#       super(GenerateRandom, self).__init__(**kwargs)
-      
-#     def call(self, inputs): # (1, 1) e.g. [[8]]
-       
-#        inputs = tf.cast(inputs, tf.int32)
-#        rand = tf.random.uniform(shape=(inputs[0]), minval=0., maxval=1., dtype=tf.float32)
-#        return rand
-
-
-# def step(values): # "hard sigmoid", useful for binary accuracy calculation from logits. negative values -> 0.0, positive values -> 1.0  
-#     return 0.5 * (1.0 + tf.sign(values))
