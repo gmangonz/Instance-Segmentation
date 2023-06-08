@@ -91,7 +91,7 @@ def data_generator(image_list, mask_list, split='train', img_size = (128, 128), 
 
     dataset = tf.data.Dataset.from_tensor_slices((image_list, mask_list))
     dataset = dataset.shuffle(8*batch_size) if split == 'train' else dataset 
-    dataset = dataset.map(lambda x, y: load_data(x, y, img_size), num_parallel_calls=tf.data.AUTOTUNE) # [2, H, W, C] dataset = dataset.map(load_data, num_parallel_calls=tf.data.AUTOTUNE) # [2, H, W, C]
+    dataset = dataset.map(lambda x, y: load_data(x, y, img_size), num_parallel_calls=tf.data.AUTOTUNE)
     dataset = dataset.batch(batch_size, drop_remainder=True) # [None, 2, H, W, C]
     if (ds_augment_func != None) and (split == 'train'):
         dataset = dataset.map(lambda x, y: ds_augment_func((x, y, tf.constant([0.5]))), num_parallel_calls=tf.data.AUTOTUNE)
@@ -102,11 +102,11 @@ def data_generator(image_list, mask_list, split='train', img_size = (128, 128), 
 def data_generator_tfrecordFile(tfrecord_file, split='train', img_size=(128, 128), ds_augment_func=None, batch_size=86):
 
     assert len(img_size) == 2, "img_size must be a tuple of length 2"
-    features = read_tfrecord(tfrecord_file)
+    features = read_tfrecord(tfrecord_file, return_values=False)
 
     dataset = tf.data.TFRecordDataset(tfrecord_file)
-    dataset = dataset.map(lambda x: _parse_features(x, img_size, features), num_parallel_calls=tf.data.AUTOTUNE)
     dataset = dataset.shuffle(8*batch_size) if split == 'train' else dataset 
+    dataset = dataset.map(lambda x: _parse_features(x, img_size, features), num_parallel_calls=tf.data.AUTOTUNE)
     dataset = dataset.batch(batch_size, drop_remainder=True)
     if (ds_augment_func != None) and (split == 'train'):
         dataset = dataset.map(lambda x, y: ds_augment_func((x, y, tf.constant([0.5]))), num_parallel_calls=tf.data.AUTOTUNE)
