@@ -18,3 +18,7 @@ def dice_loss(y_true, y_pred):
     y_pred = tf.cast(y_pred, y_true.dtype) # Might be able to remove
     loss = 1 - dice_coef(y_true, y_pred)
     return loss
+
+class Mean(tf.keras.metrics.Mean):
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        super().update_state(y_pred, sample_weight=sample_weight)

@@ -5,7 +5,7 @@ import numpy as np
 from absl import logging
 import argparse
 import tensorflow as tf
-from utils import _parse_features, read_tfrecord
+from tools.utils import _parse_features, read_tfrecord
 
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--base_path', '-bp', help="path to use as base", default=base_path)
@@ -21,7 +21,7 @@ from utils import _parse_features, read_tfrecord
 # args = parser.parse_args()
 
 
-def get_df_train(args):
+def get_data_df(args):
 
     train_imgs_path = os.path.join(args.base_path, 'train', 'train')
     train_masks_path = os.path.join(args.base_path, 'train_masks', 'train_masks')

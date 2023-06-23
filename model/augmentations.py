@@ -2,12 +2,9 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.keras import backend as K
-# import tensorflow_addons as tfa
-# from tensorflow.keras import Sequential
 import matplotlib.pyplot as plt
 
-# what I learned:
-# layers.Layer sublasses work best with call() rather than __call__()
+# Note: layers.Layer sublasses work best with call() rather than __call__()
 
 class RandomGamma(layers.Layer):
 
