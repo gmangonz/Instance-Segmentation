@@ -4,4 +4,5 @@ This repository contains my implementation of instance segmentation for the Carv
 
 TODO:
 
-- [ ] Actually build the model
+- [ ] Improve Model
+- [ ] Train New Model
