@@ -1,7 +1,7 @@
 from model.augmentations import RandomHorizontalFlip, RandomMirror, RandomZoom, RandomRotate, RandomShift, OverlayBox, AddNoise, GaussianBlur
 
 class args:
-    base_path = r'D:\DL-CV-ML Projects\Carvana Challenge - Instance Segmentation'
+    base_path = r'D:\DL-CV-ML Projects\Carvana Challenge - Instance Segmentation\code'
     img_size = (128, 128)
     batch_size = 32
     epochs = 3
@@ -26,9 +26,9 @@ min_width = 50
 max_height = 80
 max_width = 80
 
-save_filepath = r'D:\DL-CV-ML Projects\Carvana Challenge - Instance Segmentation\Instance Segmentation\saved_model\temp_model.h5'
-img_path=r'D:\DL-CV-ML Projects\Carvana Challenge - Instance Segmentation\29bb3ece3180_11.jpg'
-train_tfrecord_file = r"D:\DL-CV-ML Projects\Carvana Challenge - Instance Segmentation\TFRecordFiles\train.tfrecord"
+save_filepath = r'D:\DL-CV-ML Projects\Carvana Challenge - Instance Segmentation\code\model\saved_model\temp_model.h5'
+img_path=r'D:\DL-CV-ML Projects\Carvana Challenge - Instance Segmentation\code\Intro to Machine Learning Code\29bb3ece3180_11.jpg'
+train_tfrecord_file = r"D:\DL-CV-ML Projects\Carvana Challenge - Instance Segmentation\data\TFRecordFiles\train.tfrecord"
 
 aug_functions = [
     RandomHorizontalFlip(),
