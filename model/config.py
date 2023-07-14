@@ -1,7 +1,7 @@
 from model.augmentations import RandomHorizontalFlip, RandomMirror, RandomZoom, RandomRotate, RandomShift, OverlayBox, AddNoise, GaussianBlur
 
 class args:
-    base_path = r'D:\DL-CV-ML Projects\Carvana Challenge - Instance Segmentation\code'
+    base_path = r'D:\DL-CV-ML Projects\Carvana Challenge - Instance Segmentation'
     img_size = (128, 128)
     batch_size = 32
     epochs = 3

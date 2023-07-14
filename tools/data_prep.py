@@ -23,10 +23,10 @@ from tools.utils import _parse_features, read_tfrecord
 
 def get_data_df(args):
 
-    train_imgs_path = os.path.join(args.base_path, 'train', 'train')
-    train_masks_path = os.path.join(args.base_path, 'train_masks', 'train_masks')
+    train_imgs_path = os.path.join(args.base_path, 'data', 'train', 'train')
+    train_masks_path = os.path.join(args.base_path, 'data', 'train_masks', 'train_masks')
     
-    train_masks_csv = os.path.join(args.base_path, r'train_masks.csv\train_masks.csv')
+    train_masks_csv = os.path.join(args.base_path, 'data', r'train_masks.csv\train_masks.csv')
     try:
         df_train_mask = pd.read_csv(train_masks_csv)
     except FileNotFoundError:
