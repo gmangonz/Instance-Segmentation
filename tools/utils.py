@@ -114,7 +114,7 @@ def _parse_features(example_proto, image_shape, features):
 
 ###### Display images ######
 
-def visualize_outputs(figsize, data):
+def visualize_outputs(figsize, data, save_to=None):
 
     imgs, masks = data[0], data[1]
     num_images = len(imgs)
@@ -134,6 +134,8 @@ def visualize_outputs(figsize, data):
         else:
             ax.axis('off')
     plt.tight_layout()
+    if save_to != None:
+        plt.savefig(save_to, bbox_inches='tight', pad_inches=0.1)
     plt.show()
 
 
