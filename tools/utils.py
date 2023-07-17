@@ -116,7 +116,10 @@ def _parse_features(example_proto, image_shape, features):
 
 def visualize_outputs(figsize, data, save_to=None):
 
-    imgs, masks = data[0], data[1]
+    if isinstance(data, tuple):
+        imgs, masks = data[0], data[1]
+    else: 
+        imgs = data
     num_images = len(imgs)
     titles = ['Image {}'.format(i+1) for i in range(num_images)]
     
